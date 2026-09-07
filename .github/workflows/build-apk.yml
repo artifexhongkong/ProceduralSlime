@@ -72,17 +72,14 @@ jobs:
 
       # ---- 6. Install npm dependencies ----
       - name: Install dependencies
-        working-directory: ProceduralSlime
         run: npm install --no-audit --no-fund
 
       # ---- 7. Build Vite production bundle ----
       - name: Build Vite bundle
-        working-directory: ProceduralSlime
         run: npm run build
 
       # ---- 8. Sync dist to cordova/www ----
       - name: Sync dist to cordova www
-        working-directory: ProceduralSlime
         run: |
           rm -rf cordova/www
           mkdir -p cordova/www
@@ -91,7 +88,7 @@ jobs:
 
       # ---- 9. Prepare & Build APK ----
       - name: Build APK
-        working-directory: ProceduralSlime/cordova
+        working-directory: cordova
         run: |
           cordova prepare android
           cd platforms/android
@@ -102,7 +99,7 @@ jobs:
       # ---- 10. Verify APK exists ----
       - name: Find APK
         id: find-apk
-        working-directory: ProceduralSlime/cordova
+        working-directory: cordova
         run: |
           APK=$(find platforms/android -name "*debug*.apk" -type f | head -1)
           echo "apk_path=$APK" >> $GITHUB_OUTPUT
@@ -114,7 +111,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ProceduralSlime-APK-${{ github.run_number }}
-          path: ProceduralSlime/cordova/platforms/android/app/build/outputs/apk/debug/app-debug.apk
+          path: cordova/platforms/android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
 
       # ---- 12. Compute version tag ----
@@ -164,7 +161,7 @@ jobs:
             - AudioWorklet 程序化音效
             - DeviceOrientation 陀螺儀
             - Cordova 15 / Android 13+
-          files: ProceduralSlime/cordova/platforms/android/app/build/outputs/apk/debug/app-debug.apk
+          files: cordova/platforms/android/app/build/outputs/apk/debug/app-debug.apk
           draft: false
           prerelease: ${{ steps.version.outputs.prerelease }}
           fail_on_unmatched_files: true
