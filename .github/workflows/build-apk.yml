@@ -52,8 +52,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: ProceduralSlime/package.json
 
       # ---- 3. Setup JDK 17 ----
       - name: Setup JDK 17
