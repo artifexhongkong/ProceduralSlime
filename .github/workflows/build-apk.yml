@@ -90,7 +90,8 @@ jobs:
       - name: Build APK
         working-directory: cordova
         run: |
-          cordova build android --debug --verbose 2>&1 | tail -40
+          cordova platform add android --no-save
+          cordova build android --debug 2>&1 | tail -40
         env:
           JAVA_HOME: ${{ env.JAVA_HOME }}
           ANDROID_HOME: ${{ env.ANDROID_HOME }}
