@@ -1,0 +1,56 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+*.local
+
+# Cordova (大部分檔案是 platform-specific 自動產生，不入版控)
+ProceduralSlime/cordova/platforms/
+ProceduralSlime/cordova/plugins/
+ProceduralSlime/cordova/www/
+!ProceduralSlime/cordova/config.xml
+!ProceduralSlime/cordova/package.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Android SDK / Gradle (本地開發用)
+.gradle/
+local.properties
+*.keystore
+*.jks
+
+# 環境變數
+.env
+.env.local
+.env.*.local
+
+# PWA 產物
+public/sw.js
+public/workbox-*.js
+public/registerSW.js
+dev-dist/

@@ -1,0 +1,29 @@
+{
+  "name": "procedural-slime",
+  "version": "0.1.0",
+  "description": "程序化史萊姆 (Procedural Slime: Idle Therapy) - 解壓放置療癒系手遊",
+  "type": "module",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 5173",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0 --port 5173",
+    "serve:https": "vite preview --host 0.0.0.0 --port 5173 --https",
+    "apk:build": "bash scripts/build-apk.sh",
+    "apk:debug": "cd cordova && cordova build android --debug",
+    "apk:release": "cd cordova && cordova build android --release",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "vite": "^5.4.0",
+    "vite-plugin-pwa": "^0.20.0",
+    "workbox-window": "^7.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "@types/node": "^20.14.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

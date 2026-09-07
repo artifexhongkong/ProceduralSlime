@@ -1,0 +1,53 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.proceduralslime.therapy" version="0.1.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+    <name>Procedural Slime</name>
+    <description>把真實史萊姆養在手機裡 —— 解壓放置療癒系手遊</description>
+    <author email="dev@proceduralslime.app" href="https://github.com/artifexhongkong/ProceduralSlime">
+        Procedural Slime Team
+    </author>
+    <content src="index.html" />
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+
+    <!-- 豎屏鎖定 -->
+    <preference name="Orientation" value="portrait" />
+
+    <!-- 不允許 overscroll（避免 pull-to-refresh 彈回） -->
+    <preference name="DisallowOverscroll" value="true" />
+
+    <!-- 背景顏色：深藍 -->
+    <preference name="BackgroundColor" value="#0f0f1e" />
+
+    <!-- StatusBar 設定 -->
+    <preference name="StatusBarOverlaysWebView" value="false" />
+    <preference name="StatusBarStyle" value="blacktranslucent" />
+    <preference name="StatusBarBackgroundColor" value="#0f0f1e" />
+
+    <!-- WebView 設定 -->
+    <preference name="AndroidInsecureFileModeEnabled" value="true" />
+    <preference name="AndroidPersistentFileLocation" value="Compatibility" />
+
+    <!-- Splash screen 關閉（遊戲自己有 loader） -->
+    <preference name="SplashScreen" value="none" />
+    <preference name="ShowTitle" value="false" />
+    <preference name="LogLevel" value="ERROR" />
+
+    <!-- Android Build 設定 -->
+    <preference name="android-minSdkVersion" value="22" />
+    <preference name="android-targetSdkVersion" value="34" />
+    <preference name="android-compileSdkVersion" value="36" />
+    <preference name="android-buildToolsVersion" value="36.0.0" />
+    <preference name="AndroidLaunchMode" value="singleTask" />
+    <preference name="AndroidXEnabled" value="true" />
+
+    <!-- 允許 file:// 協議載入（Cordova 預設）-->
+    <access origin="*" />
+    <allow-navigation href="*" />
+
+    <platform name="android">
+        <config-file target="AndroidManifest.xml" parent="/manifest">
+            <uses-permission android:name="android.permission.INTERNET" />
+            <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+        </config-file>
+    </platform>
+</widget>

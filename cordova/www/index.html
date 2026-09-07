@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#1a1a2e" />
+  <meta name="description" content="把真實史萊姆養在手機裡 —— 解壓放置療癒系手遊" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Slime" />
+  <title>程序化史萊姆</title>
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./favicon.png" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; user-select: none; }
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: #0f0f1e;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft YaHei", system-ui, sans-serif;
+      touch-action: none;
+      overscroll-behavior: none;
+    }
+    /* 豎屏鎖定 —— 配合 Cordova preference Orientation=portrait */
+    @media screen and (orientation: landscape) {
+      #rotate-hint { display: flex !important; }
+    }
+    #rotate-hint {
+      display: none;
+      position: fixed; inset: 0;
+      background: #0f0f1e;
+      color: #888;
+      align-items: center; justify-content: center;
+      z-index: 9999;
+      text-align: center;
+      padding: 2rem;
+      font-size: 1.1rem;
+      flex-direction: column;
+    }
+    #rotate-hint .rotate-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      animation: rotate 1.6s ease-in-out infinite;
+    }
+    @keyframes rotate {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(-90deg); }
+    }
+    #app {
+      position: fixed; inset: 0;
+      width: 100vw; height: 100vh;
+      width: 100dvw; height: 100dvh;
+      display: block;
+    }
+    #glcanvas, #pigmentCanvas {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      display: block;
+    }
+    #pigmentCanvas { pointer-events: none; }
+    #ui-layer {
+      position: absolute; inset: 0;
+      pointer-events: none;
+      padding:
+        env(safe-area-inset-top, 0px)
+        env(safe-area-inset-right, 0px)
+        env(safe-area-inset-bottom, 0px)
+        env(safe-area-inset-left, 0px);
+    }
+    #ui-layer > * { pointer-events: auto; }
+
+    /* 色粉盤 */
+    .palette {
+      position: absolute;
+      left: 50%; bottom: 12px;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      padding: 10px 12px;
+      background: rgba(15, 15, 30, 0.55);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.08);
+      max-width: calc(100vw - 24px);
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .palette::-webkit-scrollbar { display: none; }
+    .palette-btn {
+      width: 48px; height: 48px;
+      min-width: 48px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.15);
+      cursor: pointer;
+      transition: transform 0.15s, border-color 0.15s;
+      position: relative;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .palette-btn:active { transform: scale(0.92); }
+    .palette-btn.selected {
+      border-color: #fff;
+      transform: scale(1.15);
+      box-shadow: 0 0 12px rgba(255,255,255,0.5);
+    }
+    .palette-btn.eraser::after {
+      content: '✕';
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 1.2rem;
+      mix-blend-mode: difference;
+    }
+
+    /* 頂部按鈕 */
+    .top-bar {
+      position: absolute;
+      top: 12px; left: 0; right: 0;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 12px;
+      pointer-events: none;
+    }
+    .icon-btn {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(15, 15, 30, 0.55);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: #fff;
+      font-size: 1.3rem;
+      cursor: pointer;
+      pointer-events: auto;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.1s, background 0.15s;
+    }
+    .icon-btn:active { transform: scale(0.92); background: rgba(255,255,255,0.15); }
+
+    /* 狀態顯示 */
+    .status-badge {
+      position: absolute;
+      top: 70px; left: 12px;
+      padding: 4px 10px;
+      background: rgba(15,15,30,0.55);
+      backdrop-filter: blur(8px);
+      border-radius: 999px;
+      font-size: 11px;
+      color: #aaa;
+      pointer-events: none;
+      font-family: ui-monospace, monospace;
+    }
+
+    /* 載入畫面 */
+    #loader {
+      position: fixed; inset: 0;
+      background: #0f0f1e;
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column;
+      z-index: 10000;
+      transition: opacity 0.5s;
+    }
+    #loader .slime-icon {
+      width: 80px; height: 80px;
+      background: radial-gradient(circle at 30% 30%, #6bd4ff, #2868a0 60%, #0d3559);
+      border-radius: 50%;
+      animation: pulse 1.6s ease-in-out infinite;
+      box-shadow: 0 0 40px rgba(107, 212, 255, 0.4);
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+    #loader .text {
+      margin-top: 1.5rem;
+      color: #888;
+      font-size: 0.9rem;
+      letter-spacing: 0.1em;
+    }
+    #loader.hidden { opacity: 0; pointer-events: none; }
+  </style>
+  <script type="module" crossorigin src="./assets/index-TONkAqg8.js"></script>
+<link rel="manifest" href="./manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="./registerSW.js"></script></head>
+<body>
+  <div id="loader">
+    <div class="slime-icon"></div>
+    <div class="text">載入史萊姆中…</div>
+  </div>
+
+  <div id="app">
+    <canvas id="glcanvas"></canvas>
+    <canvas id="pigmentCanvas"></canvas>
+    <div id="ui-layer">
+      <div class="top-bar">
+        <button class="icon-btn" id="btn-reset" title="重置">↻</button>
+        <button class="icon-btn" id="btn-mute" title="靜音">🔊</button>
+      </div>
+      <div class="status-badge" id="status">Idle · 60 FPS</div>
+      <div class="palette" id="palette"></div>
+    </div>
+  </div>
+
+  <div id="rotate-hint">
+    <div class="rotate-icon">📱</div>
+    <div>請將手機轉為豎屏<br/>以獲得最佳體驗</div>
+  </div>
+
+</body>
+</html>

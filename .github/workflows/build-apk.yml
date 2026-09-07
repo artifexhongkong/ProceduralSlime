@@ -1,0 +1,189 @@
+# ============================================================================
+#  build-apk.yml  —  Procedural Slime Android APK 自動打包（Web 版）
+# ----------------------------------------------------------------------------
+#  使用純 Node.js + Cordova + Android SDK，**不需要 Unity**。
+#  編譯完成的 APK 會自動發布到 GitHub Releases。
+#
+#  ✨ 完全無 secret 設定：
+#  - 不需要 UNITY_LICENSE
+#  - 不需要 keystore（debug build）
+#  - 直接用 GitHub 自動提供的 GITHUB_TOKEN 發布 Releases
+#
+#  觸發：
+#  - push 到 main / master / develop
+#  - 打 tag v* (發 stable release)
+#  - workflow_dispatch (手動觸發)
+# ============================================================================
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, master, develop ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+    inputs:
+      build_name:
+        description: 'Build name (e.g. v0.1.0-beta)'
+        required: false
+        default: ''
+
+env:
+  NODE_VERSION: '20'
+  JAVA_VERSION: '17'
+  ANDROID_SDK_TOOLS: '11076708'
+  ANDROID_BUILD_TOOLS: '36.0.0'
+  ANDROID_PLATFORM: 'android-36'
+
+jobs:
+  build:
+    name: Build APK for Android
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      # ---- 1. Checkout ----
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ---- 2. Setup Node.js ----
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: ProceduralSlime/package.json
+
+      # ---- 3. Setup JDK 17 ----
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+
+      # ---- 4. Setup Android SDK ----
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: |
+            platforms;${{ env.ANDROID_PLATFORM }}
+            build-tools;${{ env.ANDROID_BUILD_TOOLS }}
+
+      # ---- 5. Install Cordova CLI ----
+      - name: Install Cordova CLI
+        run: npm install -g cordova@13
+
+      # ---- 6. Install npm dependencies ----
+      - name: Install dependencies
+        working-directory: ProceduralSlime
+        run: npm install --no-audit --no-fund
+
+      # ---- 7. Build Vite production bundle ----
+      - name: Build Vite bundle
+        working-directory: ProceduralSlime
+        run: npm run build
+
+      # ---- 8. Sync dist to cordova/www ----
+      - name: Sync dist to cordova www
+        working-directory: ProceduralSlime
+        run: |
+          rm -rf cordova/www
+          mkdir -p cordova/www
+          cp -r dist/* cordova/www/
+          ls -la cordova/www/
+
+      # ---- 9. Prepare & Build APK ----
+      - name: Build APK
+        working-directory: ProceduralSlime/cordova
+        run: |
+          cordova prepare android
+          cd platforms/android
+          ./gradlew cdvBuildDebug --no-daemon 2>&1 | tail -30
+        env:
+          JAVA_HOME: ${{ env.JAVA_HOME }}
+
+      # ---- 10. Verify APK exists ----
+      - name: Find APK
+        id: find-apk
+        working-directory: ProceduralSlime/cordova
+        run: |
+          APK=$(find platforms/android -name "*debug*.apk" -type f | head -1)
+          echo "apk_path=$APK" >> $GITHUB_OUTPUT
+          echo "APK size: $(du -h $APK | cut -f1)"
+          ls -la $APK
+
+      # ---- 11. Upload APK to artifact ----
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ProceduralSlime-APK-${{ github.run_number }}
+          path: ProceduralSlime/cordova/platforms/android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
+
+      # ---- 12. Compute version tag ----
+      - name: Compute Version Tag
+        id: version
+        run: |
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            echo "tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+          elif [[ -n "${{ github.event.inputs.build_name }}" ]]; then
+            echo "tag=${{ github.event.inputs.build_name }}" >> $GITHUB_OUTPUT
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+          else
+            LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+            SHORT_SHA=$(git rev-parse --short HEAD)
+            echo "tag=${LATEST_TAG}-dev-${SHORT_SHA}" >> $GITHUB_OUTPUT
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+          fi
+
+      # ---- 13. Create GitHub Release ----
+      - name: Release APK to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: Procedural Slime ${{ steps.version.outputs.tag }}
+          body: |
+            # Procedural Slime ${{ steps.version.outputs.tag }}
+
+            **Build Number:** ${{ github.run_number }}
+            **Commit:** ${{ github.sha }}
+            **Built at:** ${{ github.event.head_commit.timestamp }}
+
+            ## 變更內容
+            ${{ github.event.head_commit.message }}
+
+            ## 安裝
+            下載下方 `.apk` 檔案後直接安裝。
+            首次安裝請允許「安裝未知來源應用」。
+
+            ## 已知問題
+            - 首次啟動需授予陀螺儀權限（iOS）
+            - Android 5.1 (API 22) 以上支援
+            - 需要支援 WebGL2 的裝置（Android 7+）
+
+            ## 技術
+            - WebGL2 + SDF/Metaballs shader
+            - AudioWorklet 程序化音效
+            - DeviceOrientation 陀螺儀
+            - Cordova 15 / Android 13+
+          files: ProceduralSlime/cordova/platforms/android/app/build/outputs/apk/debug/app-debug.apk
+          draft: false
+          prerelease: ${{ steps.version.outputs.prerelease }}
+          fail_on_unmatched_files: true
+        env:
+          # GITHUB_TOKEN 由 Actions 自動注入，僅對當前 repo 有效
+          # 不需要任何外部 Personal Access Token
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ---- 14. 失敗通知 ----
+      - name: Notify on Failure
+        if: failure()
+        run: |
+          echo "❌ Build failed!"
+          echo "常見問題："
+          echo "  1. SDK 版本衝突 —— 檢查 env.ANDROID_BUILD_TOOLS / ANDROID_PLATFORM"
+          echo "  2. Vite build 失敗 —— 檢查 TypeScript 型別錯誤"
+          echo "  3. Cordova prepare 失敗 —— 檢查 config.xml 格式"
+          echo "  4. Gradle build 卡住 —— 檢查 JDK 版本（需 17）"
