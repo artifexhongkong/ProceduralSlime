@@ -181,7 +181,8 @@
     }
     #loader.hidden { opacity: 0; pointer-events: none; }
   </style>
-</head>
+  <script src="./game.js"></script>
+<link rel="manifest" href="./manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="./registerSW.js"></script></head>
 <body>
   <div id="loader">
     <div class="slime-icon"></div>
@@ -206,6 +207,5 @@
     <div>請將手機轉為豎屏<br/>以獲得最佳體驗</div>
   </div>
 
-  <script type="module" src="./src/main.ts"></script>
 </body>
 </html>

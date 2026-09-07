@@ -87,12 +87,12 @@ export class SlimeRenderer {
     gl.uniform1i(this.uniforms.u_metaballCount!, n);
     gl.uniform2f(this.uniforms.u_resolution!, w, h);
     gl.uniform1f(this.uniforms.u_time!, time);
-    gl.uniform4f(this.uniforms.u_baseColor!, 0.85, 0.95, 1.0, 0.55);
-    gl.uniform1f(this.uniforms.u_refraction!, 0.04);
-    gl.uniform1f(this.uniforms.u_specPower!, 64.0);
-    gl.uniform1f(this.uniforms.u_specIntensity!, 1.5);
-    gl.uniform1f(this.uniforms.u_rimIntensity!, 0.8);
-    gl.uniform1f(this.uniforms.u_smoothK!, 0.12);
+    gl.uniform4f(this.uniforms.u_baseColor!, 0.85, 0.95, 1.0, 0.75);  // alpha 0.55 → 0.75：史萊姆更不透明
+    gl.uniform1f(this.uniforms.u_refraction!, 0.08);   // 0.04 → 0.08：折射更明顯
+    gl.uniform1f(this.uniforms.u_specPower!, 80.0);     // 64 → 80：高光更銳利
+    gl.uniform1f(this.uniforms.u_specIntensity!, 2.2);  // 1.5 → 2.2：高光更亮
+    gl.uniform1f(this.uniforms.u_rimIntensity!, 1.2);   // 0.8 → 1.2：邊緣微光更明顯
+    gl.uniform1f(this.uniforms.u_smoothK!, 0.25);      // 0.12 → 0.25：質點融合更柔順
 
     // Pigment texture: unit 0
     if (pigmentTex) {

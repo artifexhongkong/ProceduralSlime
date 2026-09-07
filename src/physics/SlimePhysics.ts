@@ -29,22 +29,22 @@ export interface SlimePhysicsConfig {
 }
 
 export const DEFAULT_CONFIG: SlimePhysicsConfig = {
-  particleCount: 18,
-  initialRadius: 0.15,
-  maxSpreadRadius: 0.8,
+  particleCount: 28,           // 18 → 28：更多質點讓史萊姆更連續
+  initialRadius: 0.25,         // 0.15 → 0.25：初始時史萊姆就比較大
+  maxSpreadRadius: 0.85,       // 0.8 → 0.85：可擴散到接近全螢幕
 
-  initialViscosity: 0.85,
-  viscosityDecayTime: 120,
-  minViscosity: 0.08,
+  initialViscosity: 0.92,      // 0.85 → 0.92：更像凝膠，回彈更明顯
+  viscosityDecayTime: 180,     // 120 → 180：衰減更慢，初期保持固態
+  minViscosity: 0.15,          // 0.08 → 0.15：永遠保持一點張力
 
-  springStiffness: 8,
-  springDamping: 2.5,
+  springStiffness: 12,         // 8 → 12：回彈更Q彈
+  springDamping: 3.5,          // 2.5 → 3.5：阻尼更強避免震盪
 
-  gravityStrength: 1.5,
-  gravitySmooth: 0.7,
+  gravityStrength: 2.0,        // 1.5 → 2.0：重力反應更明顯
+  gravitySmooth: 0.5,          // 0.7 → 0.5：反應更快
 
-  touchRadius: 0.08,
-  touchForce: 15,
+  touchRadius: 0.12,           // 0.08 → 0.12：觸控影響範圍更大
+  touchForce: 25,              // 15 → 25：戳擠更有感
 };
 
 export class SlimePhysics {
@@ -91,16 +91,19 @@ export class SlimePhysics {
   }
 
   private initializeParticles(): void {
-    // 蜂巢排列（六角堆積）
+    // 蜂巢排列（六角堆積）—— 更緊密的排列讓 metaballs 融合得更明顯
     const n = this.config.particleCount;
     const rings = Math.ceil(Math.sqrt(n));
-    const r = this.config.initialRadius / Math.max(rings, 1);
+    // 每個 metaball 的半徑設為「足以讓相鄰 metaball 融合」的大小
+    // 原本 r = initialRadius / rings * 0.8 → 太小
+    // 改為 initialRadius * 0.5 / rings * 1.5 → 半徑變大 1.875 倍
+    const r = (this.config.initialRadius / Math.max(rings, 1)) * 1.5;
     let idx = 0;
     for (let ring = 0; ring < rings * 2 && idx < n; ring++) {
       const countInRing = ring === 0 ? 1 : ring * 6;
       for (let i = 0; i < countInRing && idx < n; i++) {
         const angle = (i / countInRing) * Math.PI * 2;
-        const radius = ring * r;
+        const radius = ring * r * 0.6;  // 環間距離縮小讓質點更密集
         const x = 0.5 + Math.cos(angle) * radius;
         const y = 0.5 + Math.sin(angle) * radius;
         this.positionsX[idx] = x;
@@ -109,7 +112,7 @@ export class SlimePhysics {
         this.restPositionsY[idx] = y;
         this.velocitiesX[idx] = 0;
         this.velocitiesY[idx] = 0;
-        this.radii[idx] = r * 0.8;
+        this.radii[idx] = r * 1.2;  // 半徑加大讓融合更明顯
         idx++;
       }
     }
@@ -118,7 +121,7 @@ export class SlimePhysics {
       this.positionsY[idx] = 0.5;
       this.restPositionsX[idx] = 0.5;
       this.restPositionsY[idx] = 0.5;
-      this.radii[idx] = r;
+      this.radii[idx] = r * 1.2;
       idx++;
     }
   }
