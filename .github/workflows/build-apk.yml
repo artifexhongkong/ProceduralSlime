@@ -90,11 +90,10 @@ jobs:
       - name: Build APK
         working-directory: cordova
         run: |
-          cordova prepare android
-          cd platforms/android
-          ./gradlew cdvBuildDebug --no-daemon 2>&1 | tail -30
+          cordova build android --debug --verbose 2>&1 | tail -40
         env:
           JAVA_HOME: ${{ env.JAVA_HOME }}
+          ANDROID_HOME: ${{ env.ANDROID_HOME }}
 
       # ---- 10. Verify APK exists ----
       - name: Find APK
