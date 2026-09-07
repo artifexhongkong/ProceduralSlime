@@ -64,9 +64,7 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
-          packages: |
-            platforms;${{ env.ANDROID_PLATFORM }}
-            build-tools;${{ env.ANDROID_BUILD_TOOLS }}
+          packages: 'platforms;android-34 build-tools;36.0.0'
 
       # ---- 5. Install Cordova CLI ----
       - name: Install Cordova CLI
