@@ -39,6 +39,9 @@ jobs:
     name: Build APK for Android
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # softprops/action-gh-release 需要 contents: write 才能建立 release
+    permissions:
+      contents: write
 
     steps:
       # ---- 1. Checkout ----
